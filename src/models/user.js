@@ -3,11 +3,17 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
+    lowercase: true,
+    trim: true,
+    minLength: 5,
+    maxLength: 16,
     required: true,
   },
   email: {
     type: String,
     required: true,
+    lowercase: true,
+    trim: true,
   },
   password: {
     type: String,
@@ -15,16 +21,16 @@ const userSchema = new mongoose.Schema({
   },
   role: String,
   followers: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "user",
+    type: Number,
+    default: 0,
   },
   following: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "user",
+    type: Number,
+    default: 0,
   },
   favourites: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "recipe",
+    type: Number,
+    default: 0,
   },
   photo: String,
   date: {

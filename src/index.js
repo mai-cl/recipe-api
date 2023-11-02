@@ -1,12 +1,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const usersRouter = require("./routes/user");
 
 const app = express();
-const port = 4000;
+const port = process.env.PORT || 4000;
 
-app.get("/", (req, res) => {
-  res.status(200).send("Hello world!");
-});
+app.use(express.json());
+app.use("/users", usersRouter);
 
 app.listen(port, () => {
   console.log("Listen on port " + port);
