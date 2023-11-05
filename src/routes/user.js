@@ -1,9 +1,9 @@
-const express = require("express");
+const router = require("express").Router();
 const bcrypt = require("bcrypt");
-const { User } = require("../models/user");
 const { body, validationResult, param } = require("express-validator");
+
 const uploadProfilePhoto = require("../utils/uploadProfilePhoto");
-const router = express.Router();
+const User = require("../models/user");
 
 router.get("/", async (req, res) => {
   try {
@@ -92,7 +92,7 @@ router.post(
 
       const result = await newUser.save();
 
-      return res.status(200).json({
+      return res.status(201).json({
         status: "success",
         data: result,
       });
@@ -104,36 +104,5 @@ router.post(
     }
   }
 );
-
-// Refactor
-/* router.post("/:id/following", async (req, res) => {
-  const followingUser = await User.findById(req.body.followingUserId);
-  const user = await User.findById(req.params.id);
-  user.following.push(followingUser._id);
-  followingUser.followers.push(user._id);
-  await followingUser.save();
-  const resultUser = await user.save();
-  return res.status(200).json({
-    status: "sucess",
-    data: resultUser,
-  });
-}); */
-
-// Refactor
-/* router.delete("/:id/following", async (req, res) => {
-  const followingUser = await User.findById(req.body.followingUserId);
-  const user = await User.findById(req.params.id);
-
-  user.following = user.following.filter((id) => !id.equals(followingUser._id));
-  followingUser.followers = followingUser.followers.filter(
-    (id) => !id.equals(user._id)
-  );
-  await followingUser.save();
-  const resultUser = await user.save();
-  return res.status(200).json({
-    status: "success",
-    data: resultUser,
-  });
-}); */
 
 module.exports = router;

@@ -1,12 +1,14 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const usersRouter = require("./routes/user");
+const followsRouter = require("./routes/follow");
 
 const app = express();
 const port = process.env.PORT || 4000;
 
 app.use(express.json());
 app.use("/users", usersRouter);
+app.use("/follows", followsRouter);
 
 app.listen(port, () => {
   console.log("Listen on port " + port);
