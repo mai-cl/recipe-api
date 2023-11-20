@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const usersRouter = require("./routes/user");
 const followsRouter = require("./routes/follow");
+const categoriesRouter = require("./routes/category");
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -9,6 +10,7 @@ const port = process.env.PORT || 4000;
 app.use(express.json());
 app.use("/users", usersRouter);
 app.use("/follows", followsRouter);
+app.use("/categories", categoriesRouter);
 
 app.listen(port, () => {
   console.log("Listen on port " + port);
