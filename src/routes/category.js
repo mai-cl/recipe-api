@@ -20,7 +20,7 @@ router.get("/", async (req, res) => {
 
 router.post(
   "/",
-  body("name").notEmpty().isString().isLength({ min: 2 }),
+  body("name").exists().isString().isLength({ min: 2 }),
   async (req, res) => {
     const requestValidationResult = validationResult(req);
     if (!requestValidationResult.isEmpty()) {
@@ -50,7 +50,7 @@ router.post(
   }
 );
 
-router.delete("/:id", param("id").notEmpty().isMongoId(), async (req, res) => {
+router.delete("/:id", param("id").exists().isMongoId(), async (req, res) => {
   const reqValidationResult = validationResult(req);
   if (!reqValidationResult.isEmpty()) {
     return res.status(400).json({
