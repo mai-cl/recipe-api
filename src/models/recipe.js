@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 const ingredientSchema = new mongoose.Schema({
   item: {
@@ -13,7 +13,7 @@ const ingredientSchema = new mongoose.Schema({
     minLength: 2,
     trim: true,
   },
-});
+})
 
 const stepSchema = new mongoose.Schema({
   description: {
@@ -25,7 +25,7 @@ const stepSchema = new mongoose.Schema({
   picture: {
     type: String,
   },
-});
+})
 
 const recipeSchema = new mongoose.Schema({
   title: {
@@ -65,12 +65,16 @@ const recipeSchema = new mongoose.Schema({
     type: [stepSchema],
     required: true,
   },
+  likes: {
+    type: Number,
+    default: 0,
+  },
   date: {
     type: Date,
     default: Date.now,
   },
-});
+})
 
-const Recipe = mongoose.model("recipe", recipeSchema);
+const Recipe = mongoose.model("recipe", recipeSchema)
 
-module.exports = Recipe;
+module.exports = Recipe
