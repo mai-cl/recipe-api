@@ -1,7 +1,8 @@
 const router = require("express").Router();
 
-const { body, validationResult, query, param } = require("express-validator");
+const { body, query, param } = require("express-validator");
 const Recipe = require("../models/recipe");
+const checkValidationResult = require("../middlewares/checkValidationResult");
 
 router.get(
   "/",
@@ -10,16 +11,8 @@ router.get(
     .isString()
     .trim()
     .customSanitizer((value) => new RegExp(value, "i")),
+  checkValidationResult,
   async (req, res) => {
-    const requestValidationResult = validationResult(req);
-    if (!requestValidationResult.isEmpty()) {
-      return res.status(400).json({
-        status: "fail",
-        message: "The parameters aren't valid",
-        errors: requestValidationResult.array(),
-      });
-    }
-
     try {
       const results = await Recipe.find(req.query)
         .select("title picture category readyInMinutes servings date author")
@@ -52,15 +45,8 @@ router.post(
     body("steps.*.picture").optional().isString(),
     body(["ingredients.*.item", "ingredients.*.measure"]).isString(),
   ],
+  checkValidationResult,
   async (req, res) => {
-    const requestValidationResult = validationResult(req);
-    if (!requestValidationResult.isEmpty()) {
-      return res.status(400).json({
-        status: "fail",
-        message: "The parameters aren't valid",
-        errors: requestValidationResult.array(),
-      });
-    }
     try {
       const newRecipe = new Recipe({
         author: req.body.author,
@@ -87,30 +73,27 @@ router.post(
   }
 );
 
-router.delete("/:id", param("id").isMongoId(), async (req, res) => {
-  const requestValidationResult = validationResult(req);
-  if (!requestValidationResult.isEmpty()) {
-    return res.status(400).json({
-      status: "fail",
-      message: "The parameters aren't valid",
-      errors: requestValidationResult.array(),
-    });
-  }
-  try {
-    const result = await Recipe.findByIdAndDelete(req.params.id);
-    if (!result) {
-      return res.status(400).json({
-        status: "fail",
-        message: "Operation could not be completed",
+router.delete(
+  "/:id",
+  param("id").isMongoId(),
+  checkValidationResult,
+  async (req, res) => {
+    try {
+      const result = await Recipe.findByIdAndDelete(req.params.id);
+      if (!result) {
+        return res.status(400).json({
+          status: "fail",
+          message: "Operation could not be completed",
+        });
+      }
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(500).json({
+        status: "error",
+        message: error.message,
       });
     }
-    return res.status(204).send();
-  } catch (error) {
-    return res.status(500).json({
-      status: "error",
-      message: error.message,
-    });
   }
-});
+);
 
 module.exports = router;

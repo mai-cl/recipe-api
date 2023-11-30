@@ -4,6 +4,7 @@ const { body, validationResult, param } = require("express-validator");
 
 const uploadProfilePhoto = require("../utils/uploadProfilePhoto");
 const User = require("../models/user");
+const checkValidationResult = require("../middlewares/checkValidationResult");
 
 router.get("/", async (req, res) => {
   try {
@@ -20,34 +21,30 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", param("id").isMongoId(), async (req, res) => {
-  const requestValidationResult = validationResult(req);
-  if (!requestValidationResult.isEmpty()) {
-    return res.status(400).json({
-      status: "fail",
-      message: "The parameters aren't valid",
-      errors: requestValidationResult.array(),
-    });
-  }
-
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user)
-      return res.status(404).json({
-        status: "fail",
-        message: `Doesn't exist an user with the id: ${req.params.id}`,
+router.get(
+  "/:id",
+  param("id").isMongoId(),
+  checkValidationResult,
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.params.id);
+      if (!user)
+        return res.status(404).json({
+          status: "fail",
+          message: `Doesn't exist an user with the id: ${req.params.id}`,
+        });
+      return res.status(200).json({
+        status: "success",
+        data: user,
       });
-    return res.status(200).json({
-      status: "success",
-      data: user,
-    });
-  } catch (e) {
-    return res.status(500).json({
-      status: "error",
-      message: e.message,
-    });
+    } catch (e) {
+      return res.status(500).json({
+        status: "error",
+        message: e.message,
+      });
+    }
   }
-});
+);
 
 router.post(
   "/",
@@ -64,16 +61,8 @@ router.post(
     body("role").optional().isString(),
     body("photo").optional().isDataURI(),
   ],
+  checkValidationResult,
   async (req, res) => {
-    const requestValidationResult = validationResult(req);
-    if (!requestValidationResult.isEmpty()) {
-      return res.status(400).json({
-        status: "fail",
-        message: "The parameters aren't valid",
-        errors: requestValidationResult.array(),
-      });
-    }
-
     try {
       const encryptedPassword = await bcrypt.hash(req.body.password, 10);
 
