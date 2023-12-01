@@ -32,12 +32,82 @@ router.get(
   }
 );
 
+router.get(
+  "/:id",
+  param("id").isMongoId(),
+  checkValidationResult,
+  async (req, res) => {
+    try {
+      const result = await Recipe.findById(req.params.id)
+        .populate("author", "username email")
+        .populate("category");
+      if (!result) {
+        return res.status(404).json({
+          status: "fail",
+          message: "The recipe does not exists",
+        });
+      }
+      return res.status(200).json({
+        status: "success",
+        data: result,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        status: "error",
+        message: error.message,
+      });
+    }
+  }
+);
+
+router.patch(
+  "/:id",
+  [
+    param("id").isMongoId(),
+    body("title").optional().isString().isLength({ min: 2 }),
+    body("picture").optional().isString(),
+    body(["readyInMinutes", "servings"]).optional().isNumeric(),
+    body("category").optional().isMongoId(),
+    body("tags.*").optional().isString(),
+    body(["steps", "ingredients"]).optional().isArray({ min: 1 }),
+    body(["steps.*", "ingredients.*"]).isObject({ strict: true }),
+    body("steps.*.description").isString(),
+    body("steps.*.picture").optional().isString(),
+    body(["ingredients.*.item", "ingredients.*.measure"]).isString(),
+    body(["author", "likes"]).not().exists(),
+  ],
+  checkValidationResult,
+  async (req, res) => {
+    try {
+      const recipe = await Recipe.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true,
+      });
+      if (!recipe) {
+        return res.status(400).json({
+          status: "fail",
+          message: "The recipe does not exists",
+        });
+      }
+      return res.status(200).json({
+        status: "success",
+        data: recipe,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        status: "error",
+        message: error.message,
+      });
+    }
+  }
+);
+
 router.post(
   "/",
   [
     body(["author", "category"]).isMongoId(),
     body(["readyInMinutes", "servings"]).isNumeric(),
-    body("title").isString(),
+    body("title").isString().isLength({ min: 2 }),
     body("tags.*").optional().isString(),
     body(["steps", "ingredients"]).isArray({ min: 1 }),
     body(["steps.*", "ingredients.*"]).isObject({ strict: true }),
