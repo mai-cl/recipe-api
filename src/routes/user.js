@@ -1,10 +1,11 @@
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
-const { body, validationResult, param } = require("express-validator");
+const { body, param } = require("express-validator");
 
 const uploadProfilePhoto = require("../utils/uploadProfilePhoto");
 const User = require("../models/user");
 const checkValidationResult = require("../middlewares/checkValidationResult");
+const checkIfPasswordsAreEqual = require("../middlewares/checkIfPasswordsAreEqual");
 
 router.get("/", async (req, res) => {
   try {
@@ -51,17 +52,20 @@ router.post(
   [
     body("username").notEmpty().isLength({ min: 2, max: 16 }),
     body("email").notEmpty().isEmail(),
-    body("password").notEmpty().isStrongPassword({
-      minLength: 8,
-      minNumbers: 1,
-      minSymbols: 0,
-      minUppercase: 1,
-      minLowercase: 1,
-    }),
+    body(["password", "passwordConfirm"])
+      .isStrongPassword({
+        minLength: 8,
+        minNumbers: 1,
+        minSymbols: 0,
+        minUppercase: 1,
+        minLowercase: 1,
+      })
+      .trim(),
     body("role").optional().isString(),
     body("photo").optional().isDataURI(),
   ],
   checkValidationResult,
+  checkIfPasswordsAreEqual,
   async (req, res) => {
     try {
       const encryptedPassword = await bcrypt.hash(req.body.password, 10);
