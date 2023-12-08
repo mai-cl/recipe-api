@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { promisify } = require("util");
 
 const User = require("../models/user");
 const { body } = require("express-validator");
@@ -29,7 +30,7 @@ router.post(
           message: "The email or password are incorrect, please try again",
         });
 
-      const token = jwt.sign(
+      const token = await promisify(jwt.sign)(
         { email: freshUser.email, username: freshUser.username },
         process.env.JWT_SECRET,
         {
