@@ -5,6 +5,7 @@ const followsRouter = require("./routes/follow");
 const categoriesRouter = require("./routes/category");
 const recipesRouter = require("./routes/recipe");
 const likesRouter = require("./routes/like");
+const authRouter = require("./routes/auth");
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -15,6 +16,7 @@ app.use("/follows", followsRouter);
 app.use("/categories", categoriesRouter);
 app.use("/recipes", recipesRouter);
 app.use("/likes", likesRouter);
+app.use("/auth", authRouter);
 
 app.listen(port, () => {
   console.log("Listen on port " + port);
