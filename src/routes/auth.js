@@ -1,11 +1,67 @@
+const { promisify } = require("util");
 const router = require("express").Router();
+const { body } = require("express-validator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { promisify } = require("util");
 
 const User = require("../models/user");
-const { body } = require("express-validator");
 const checkValidationResult = require("../middlewares/checkValidationResult");
+const checkIfPasswordsAreEqual = require("../middlewares/checkIfPasswordsAreEqual");
+const checkIfEmailExists = require("../middlewares/checkIfEmailExists");
+const checkIfUsernameExists = require("../middlewares/checkIfUsernameExists");
+
+router.post(
+  "/signup",
+  [
+    body("username").notEmpty().isLength({ min: 2, max: 16 }),
+    body("email").notEmpty().isEmail(),
+    body(["password", "passwordConfirm"])
+      .isStrongPassword({
+        minLength: 8,
+        minNumbers: 1,
+        minSymbols: 0,
+        minUppercase: 1,
+        minLowercase: 1,
+      })
+      .trim(),
+    body("role").optional().isString(),
+  ],
+  checkIfUsernameExists,
+  checkIfEmailExists,
+  checkIfPasswordsAreEqual,
+  async (req, res) => {
+    try {
+      const encryptedPassword = await bcrypt.hash(req.body.password, 10);
+
+      await User.create({
+        username: req.body.username,
+        email: req.body.email,
+        password: encryptedPassword,
+        role: "USER",
+      });
+
+      const token = await promisify(jwt.sign)(
+        { username: req.body.username, email: req.body.email },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+
+      return res.status(200).json({
+        status: "success",
+        token: token,
+        data: {
+          username: req.body.username,
+          email: req.body.email,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        status: "error",
+        message: error.message,
+      });
+    }
+  }
+);
 
 router.post(
   "/login",
@@ -41,6 +97,10 @@ router.post(
       return res.status(200).json({
         status: "success",
         token: token,
+        data: {
+          username: freshUser.username,
+          email: freshUser.email,
+        },
       });
     } catch (error) {
       res.status(500).json({
