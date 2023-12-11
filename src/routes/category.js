@@ -3,8 +3,9 @@ const { body, param } = require("express-validator");
 
 const Category = require("../models/category");
 const checkValidationResult = require("../middlewares/checkValidationResult");
+const protect = require("../middlewares/protect");
 
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const results = await Category.find();
     return res.status(200).json({
