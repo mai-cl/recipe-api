@@ -30,10 +30,11 @@ router.get(
 
 router.post(
   "/",
-  body(["authorUser", "targetUser"]).exists().isMongoId(),
+  protect,
+  body(["targetUser"]).isMongoId(),
   checkValidationResult,
   async (req, res) => {
-    if (req.body.authorUser === req.body.targetUser) {
+    if (req.user.id === req.body.targetUser) {
       return res.status(400).json({
         status: "fail",
         message: "Invalid operation",
@@ -45,7 +46,7 @@ router.post(
 
     try {
       const existsFollow = await Follow.findOne({
-        authorUser: req.body.authorUser,
+        authorUser: req.user.id,
         targetUser: req.body.targetUser,
       });
 
@@ -63,7 +64,7 @@ router.post(
         });
 
       const newFollow = new Follow({
-        authorUser: req.body.authorUser,
+        authorUser: req.user.id,
         targetUser: req.body.targetUser,
       });
 
@@ -71,7 +72,7 @@ router.post(
       await User.findByIdAndUpdate(req.body.targetUser, {
         $inc: { followers: 1 },
       });
-      await User.findByIdAndUpdate(req.body.authorUser, {
+      await User.findByIdAndUpdate(req.user.id, {
         $inc: { following: 1 },
       });
 
@@ -93,7 +94,8 @@ router.post(
 
 router.delete(
   "/",
-  body(["authorUser", "targetUser"]).exists().isMongoId(),
+  protect,
+  body(["targetUser"]).isMongoId(),
   checkValidationResult,
   async (req, res) => {
     const session = await mongoose.startSession();
@@ -101,7 +103,7 @@ router.delete(
 
     try {
       const result = await Follow.findOneAndDelete({
-        authorUser: req.body.authorUser,
+        authorUser: req.user.id,
         targetUser: req.body.targetUser,
       });
       if (!result) {
@@ -115,7 +117,7 @@ router.delete(
       await User.findByIdAndUpdate(req.body.targetUser, {
         $inc: { followers: -1 },
       });
-      await User.findByIdAndUpdate(req.body.authorUser, {
+      await User.findByIdAndUpdate(req.user.id, {
         $inc: { following: -1 },
       });
       await session.commitTransaction();
