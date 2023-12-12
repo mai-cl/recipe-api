@@ -29,7 +29,7 @@ module.exports = async (req, res, next) => {
   }
 
   try {
-    const freshUser = await User.findOne({ username: decoded.username });
+    const freshUser = await User.findById(decoded.id);
     if (!freshUser)
       return res.status(401).json({
         status: "fail",

@@ -4,8 +4,9 @@ const { body, param } = require("express-validator");
 const Category = require("../models/category");
 const checkValidationResult = require("../middlewares/checkValidationResult");
 const protect = require("../middlewares/protect");
+const restictTo = require("../middlewares/restictTo");
 
-router.get("/", protect, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const results = await Category.find();
     return res.status(200).json({
@@ -22,6 +23,8 @@ router.get("/", protect, async (req, res) => {
 
 router.post(
   "/",
+  protect,
+  restictTo(["ADMIN"]),
   body("name").exists().isString().isLength({ min: 2 }),
   checkValidationResult,
   async (req, res) => {
@@ -46,6 +49,8 @@ router.post(
 
 router.delete(
   "/:id",
+  protect,
+  restictTo(["ADMIN"]),
   param("id").exists().isMongoId(),
   checkValidationResult,
   async (req, res) => {

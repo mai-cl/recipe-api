@@ -5,9 +5,11 @@ const { body, query } = require("express-validator");
 const Follow = require("../models/follow");
 const User = require("../models/user");
 const checkValidationResult = require("../middlewares/checkValidationResult");
+const protect = require("../middlewares/protect");
 
 router.get(
   "/",
+  protect,
   query(["authorUser", "targetUser"]).optional().isMongoId(),
   checkValidationResult,
   async (req, res) => {

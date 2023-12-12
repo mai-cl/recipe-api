@@ -33,7 +33,7 @@ router.post(
     try {
       const encryptedPassword = await bcrypt.hash(req.body.password, 10);
 
-      await User.create({
+      const newUser = await User.create({
         username: req.body.username,
         email: req.body.email,
         password: encryptedPassword,
@@ -41,7 +41,7 @@ router.post(
       });
 
       const token = await promisify(jwt.sign)(
-        { username: req.body.username, email: req.body.email },
+        { username: req.body.username, email: req.body.email, id: newUser._id },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN }
       );
@@ -87,7 +87,11 @@ router.post(
         });
 
       const token = await promisify(jwt.sign)(
-        { email: freshUser.email, username: freshUser.username },
+        {
+          email: freshUser.email,
+          username: freshUser.username,
+          id: freshUser._id,
+        },
         process.env.JWT_SECRET,
         {
           expiresIn: process.env.JWT_EXPIRES_IN,
