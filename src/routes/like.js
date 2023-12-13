@@ -1,35 +1,32 @@
 const { query, body } = require("express-validator");
-const Like = require("../models/like");
-const checkValidationResult = require("../middlewares/checkValidationResult");
-const Recipe = require("../models/recipe");
-const User = require("../models/user");
 const mongoose = require("mongoose");
-
 const router = require("express").Router();
 
-router.get(
-  "/",
-  query(["authorUser", "targetRecipe"]).optional().isMongoId(),
-  checkValidationResult,
-  async (req, res) => {
-    try {
-      const results = await Like.find(req.query);
-      return res.status(200).json({
-        status: "success",
-        data: results,
-      });
-    } catch (error) {
-      return res.status(500).json({
-        status: "error",
-        message: error.message,
-      });
-    }
+const checkValidationResult = require("../middlewares/checkValidationResult");
+const protect = require("../middlewares/protect");
+const Like = require("../models/like");
+const Recipe = require("../models/recipe");
+const User = require("../models/user");
+
+router.get("/", protect, async (req, res) => {
+  try {
+    const results = await Like.find({ authorUser: req.user.id });
+    return res.status(200).json({
+      status: "success",
+      data: results,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
   }
-);
+});
 
 router.post(
   "/",
-  body(["authorUser", "targetRecipe"]).isMongoId(),
+  protect,
+  body("targetRecipe").isMongoId(),
   checkValidationResult,
   async (req, res) => {
     const session = await mongoose.startSession();
@@ -37,7 +34,7 @@ router.post(
 
     try {
       const existsLike = await Like.exists({
-        authorUser: req.body.authorUser,
+        authorUser: req.user.id,
         targetRecipe: req.body.targetRecipe,
       });
 
@@ -45,14 +42,6 @@ router.post(
         return res.status(400).json({
           status: "fail",
           message: "The operation is not valid",
-        });
-      }
-
-      const existsUser = await User.findById(req.body.authorUser);
-      if (!existsUser) {
-        return res.status(400).json({
-          status: "fail",
-          message: "The user does not exists",
         });
       }
 
@@ -65,7 +54,7 @@ router.post(
       }
 
       const newLike = new Like({
-        authorUser: req.body.authorUser,
+        authorUser: req.user.id,
         targetRecipe: req.body.targetRecipe,
       });
       recipe.$inc("likes", 1);
@@ -90,7 +79,8 @@ router.post(
 
 router.delete(
   "/",
-  body(["authorUser", "targetRecipe"]).isMongoId(),
+  protect,
+  body("targetRecipe").isMongoId(),
   checkValidationResult,
   async (req, res) => {
     const session = await mongoose.startSession();
@@ -98,7 +88,7 @@ router.delete(
 
     try {
       const result = await Like.findOneAndDelete({
-        authorUser: req.body.authorUser,
+        authorUser: req.user.id,
         targetRecipe: req.body.targetRecipe,
       });
       if (!result) {
