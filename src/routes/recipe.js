@@ -3,6 +3,7 @@ const router = require("express").Router();
 const { body, query, param } = require("express-validator");
 const Recipe = require("../models/recipe");
 const checkValidationResult = require("../middlewares/checkValidationResult");
+const protect = require("../middlewares/protect");
 
 router.get(
   "/",
@@ -62,6 +63,7 @@ router.get(
 
 router.patch(
   "/:id",
+  protect,
   [
     param("id").isMongoId(),
     body("title").optional().isString().isLength({ min: 2 }),
@@ -79,19 +81,33 @@ router.patch(
   checkValidationResult,
   async (req, res) => {
     try {
-      const recipe = await Recipe.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,
-        runValidators: true,
-      });
-      if (!recipe) {
+      const actualRecipe = await Recipe.findById(req.params.id);
+      if (!actualRecipe) {
         return res.status(400).json({
           status: "fail",
           message: "The recipe does not exists",
         });
       }
+
+      if (actualRecipe.author.toString() !== req.user.id) {
+        return res.status(400).json({
+          status: "fail",
+          message: "Invalid operation, only the author can modify this recipe",
+        });
+      }
+
+      const updatedRecipe = await Recipe.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
       return res.status(200).json({
         status: "success",
-        data: recipe,
+        data: updatedRecipe,
       });
     } catch (error) {
       return res.status(500).json({
@@ -104,8 +120,9 @@ router.patch(
 
 router.post(
   "/",
+  protect,
   [
-    body(["author", "category"]).isMongoId(),
+    body("category").isMongoId(),
     body(["readyInMinutes", "servings"]).isNumeric(),
     body("title").isString().isLength({ min: 2 }),
     body("tags.*").optional().isString(),
@@ -119,7 +136,7 @@ router.post(
   async (req, res) => {
     try {
       const newRecipe = new Recipe({
-        author: req.body.author,
+        author: req.user.id,
         readyInMinutes: req.body.readyInMinutes,
         servings: req.body.servings,
         title: req.body.title,
@@ -145,17 +162,28 @@ router.post(
 
 router.delete(
   "/:id",
+  protect,
   param("id").isMongoId(),
   checkValidationResult,
   async (req, res) => {
     try {
-      const result = await Recipe.findByIdAndDelete(req.params.id);
-      if (!result) {
-        return res.status(400).json({
+      const actualRecipe = await Recipe.findById(req.params.id);
+      if (!actualRecipe) {
+        return res.status(404).json({
           status: "fail",
-          message: "Operation could not be completed",
+          message: "The recipe does not exists",
         });
       }
+
+      if (actualRecipe.author.toString() !== req.user.id) {
+        return res.status(401).json({
+          status: "fail",
+          message: "Invalid operation, only the author can delete this recipe",
+        });
+      }
+
+      await Recipe.findByIdAndDelete(req.params.id);
+
       return res.status(204).send();
     } catch (error) {
       return res.status(500).json({
@@ -167,3 +195,6 @@ router.delete(
 );
 
 module.exports = router;
+
+//testear con postman!""!!!
+// idem likes

@@ -1,4 +1,4 @@
-const { query, body } = require("express-validator");
+const { body } = require("express-validator");
 const mongoose = require("mongoose");
 const router = require("express").Router();
 
@@ -58,8 +58,10 @@ router.post(
         targetRecipe: req.body.targetRecipe,
       });
       recipe.$inc("likes", 1);
+
       await recipe.save();
       await newLike.save();
+      await User.findByIdAndUpdate(req.user.id, { $inc: { favourites: 1 } });
 
       await session.commitTransaction();
       session.endSession();
@@ -100,6 +102,7 @@ router.delete(
       const recipe = await Recipe.findById(req.body.targetRecipe);
       recipe.$inc("likes", -1);
       await recipe.save();
+      await User.findByIdAndUpdate(req.user.id, { $inc: { favourites: -1 } });
 
       await session.commitTransaction();
       session.endSession();
