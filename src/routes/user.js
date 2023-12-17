@@ -6,8 +6,10 @@ const uploadProfilePhoto = require("../utils/uploadProfilePhoto");
 const User = require("../models/user");
 const checkValidationResult = require("../middlewares/checkValidationResult");
 const checkIfPasswordsAreEqual = require("../middlewares/checkIfPasswordsAreEqual");
+const protect = require("../middlewares/protect");
+const restricTo = require("../middlewares/restrictTo");
 
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const users = await User.find();
     return res.status(200).json({
@@ -24,6 +26,7 @@ router.get("/", async (req, res) => {
 
 router.get(
   "/:id",
+  protect,
   param("id").isMongoId(),
   checkValidationResult,
   async (req, res) => {
@@ -93,6 +96,31 @@ router.post(
       return res.status(500).json({
         status: "error",
         message: e.message,
+      });
+    }
+  }
+);
+
+router.delete(
+  "/:id",
+  protect,
+  restricTo(["ADMIN"]),
+  param("id").isMongoId(),
+  checkValidationResult,
+  async (req, res) => {
+    try {
+      const deleteResult = await User.findByIdAndDelete(req.params.id);
+      if (!deleteResult) {
+        return res.status(404).json({
+          status: "fail",
+          message: "The user does not exists",
+        });
+      }
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(500).json({
+        status: "error",
+        message: error.message,
       });
     }
   }

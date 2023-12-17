@@ -195,6 +195,3 @@ router.delete(
 );
 
 module.exports = router;
-
-//testear con postman!""!!!
-// idem likes
