@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
-const { body, param } = require("express-validator");
+const { body, param, query } = require("express-validator");
 
 const uploadProfilePhoto = require("../utils/uploadProfilePhoto");
 const User = require("../models/user");
@@ -9,20 +9,29 @@ const checkIfPasswordsAreEqual = require("../middlewares/checkIfPasswordsAreEqua
 const protect = require("../middlewares/protect");
 const restricTo = require("../middlewares/restrictTo");
 
-router.get("/", protect, async (req, res) => {
-  try {
-    const users = await User.find();
-    return res.status(200).json({
-      status: "success",
-      data: users,
-    });
-  } catch (e) {
-    return res.status(500).json({
-      status: "error",
-      message: e.message,
-    });
+router.get(
+  "/",
+  protect,
+  query("username")
+    .optional()
+    .isString()
+    .trim()
+    .customSanitizer((value) => new RegExp(value, "i")),
+  async (req, res) => {
+    try {
+      const users = await User.find(req.query);
+      return res.status(200).json({
+        status: "success",
+        data: users,
+      });
+    } catch (e) {
+      return res.status(500).json({
+        status: "error",
+        message: e.message,
+      });
+    }
   }
-});
+);
 
 router.get(
   "/:id",
