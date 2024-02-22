@@ -6,6 +6,7 @@ const checkValidationResult = require("../middlewares/checkValidationResult");
 const protect = require("../middlewares/protect");
 const restricTo = require("../middlewares/restrictTo");
 const mongoose = require("mongoose");
+const Recipe = require("../models/recipe");
 
 router.get(
   "/",
@@ -222,6 +223,52 @@ router.delete(
       return res.status(500).json({
         status: "error",
         message: error.message,
+      });
+    }
+  }
+);
+
+router.post(
+  "/:id/likes",
+  protect,
+  body("targetRecipe").isMongoId(),
+  checkValidationResult,
+  async (req, res) => {
+    if (req.user.id !== req.params.id) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Bad request",
+      });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const recipe = await Recipe.findById(req.body.targetRecipe);
+      if (!recipe) {
+        return res.status(400).json({
+          status: "fail",
+          message: "The recipe does not exists",
+        });
+      }
+
+      recipe.$inc("likes", 1);
+      await User.findByIdAndUpdate(req.user.id, {
+        $addToSet: { favourites: req.body.targetRecipe },
+      });
+      await recipe.save();
+
+      session.endSession();
+
+      return res.status(204).send();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+
+      return res.status(500).json({
+        status: "error",
+        error: error.message,
       });
     }
   }

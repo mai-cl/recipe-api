@@ -39,9 +39,13 @@ const userSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     ref: "user",
   },
-  favourites: {
+  /* favourites: {
     type: Number,
     default: 0,
+  }, */
+  favourites: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "recipe",
   },
   photo: String,
   date: {
