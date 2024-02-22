@@ -1,5 +1,12 @@
 const mongoose = require("mongoose");
 
+/* const followingSchema = new mongoose.Schema({
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+}); */
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -24,13 +31,13 @@ const userSchema = new mongoose.Schema({
     default: "USER",
     enum: ["USER", "ADMIN"],
   },
-  followers: {
-    type: Number,
-    default: 0,
+  followings: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "user",
   },
-  following: {
-    type: Number,
-    default: 0,
+  followers: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "user",
   },
   favourites: {
     type: Number,

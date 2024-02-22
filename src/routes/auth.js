@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { promisify } = require("util");
 const router = require("express").Router();
 const { body } = require("express-validator");
@@ -24,7 +25,6 @@ router.post(
         minLowercase: 1,
       })
       .trim(),
-    body("role").optional().isString(),
   ],
   checkIfUsernameExists,
   checkIfEmailExists,
