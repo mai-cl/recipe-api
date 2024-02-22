@@ -29,7 +29,10 @@ module.exports = async (req, res, next) => {
   }
 
   try {
-    const freshUser = await User.findById(decoded.id);
+    const freshUser = await User.findById(decoded.id).select(
+      "-password -followings -followers"
+    );
+
     if (!freshUser)
       return res.status(401).json({
         status: "fail",

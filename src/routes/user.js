@@ -82,6 +82,54 @@ router.delete(
   }
 );
 
+router.get("/:id/followings", protect, async (req, res) => {
+  if (req.user.id !== req.params.id) {
+    return res.status(400).json({
+      status: "fail",
+      message: "Invalid operation",
+    });
+  }
+
+  try {
+    const followings = await User.findById(req.user.id).select(
+      "followings -_id"
+    );
+
+    return res.status(200).json({
+      status: "success",
+      data: followings,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+});
+
+router.get("/:id/followers", protect, async (req, res) => {
+  if (req.user.id !== req.params.id) {
+    return res.status(400).json({
+      status: "fail",
+      message: "Invalid operation",
+    });
+  }
+
+  try {
+    const followers = await User.findById(req.user.id).select("followers -_id");
+
+    return res.status(200).json({
+      status: "success",
+      data: followers,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+});
+
 router.post(
   "/:id/followings",
   protect,
@@ -106,11 +154,62 @@ router.post(
           message: "The target user doesn't exist",
         });
 
-      req.user.followings.addToSet(targetUser);
-      await req.user.save();
+      await User.findByIdAndUpdate(req.user.id, {
+        $addToSet: { followings: targetUser },
+      });
+      await User.findByIdAndUpdate(req.body.targetUser, {
+        $addToSet: { followers: req.user.id },
+      });
 
-      targetUser.followers.addToSet(req.user.id);
-      await targetUser.save();
+      await session.commitTransaction();
+      session.endSession();
+
+      return res.status(204).send();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+
+      return res.status(500).json({
+        status: "error",
+        message: error.message,
+      });
+    }
+  }
+);
+
+router.delete(
+  "/:id/followings/:targetUserId",
+  protect,
+  param(["targetUserId"]).isMongoId(),
+  checkValidationResult,
+  async (req, res) => {
+    if (
+      req.user.id === req.params.targetUserId ||
+      req.user.id !== req.params.id
+    ) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Invalid operation",
+      });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const targetUserId = await User.findById(req.params.targetUserId);
+      if (!targetUserId)
+        return res.status(400).json({
+          status: "fail",
+          message: "The target user doesn't exist",
+        });
+
+      await User.findByIdAndUpdate(req.user.id, {
+        $pull: { followings: req.params.targetUserId },
+      });
+      await User.findByIdAndUpdate(req.params.targetUserId, {
+        $pull: { followers: req.user.id },
+      });
 
       await session.commitTransaction();
       session.endSession();
