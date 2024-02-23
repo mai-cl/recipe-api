@@ -1,12 +1,5 @@
 const mongoose = require("mongoose");
 
-/* const followingSchema = new mongoose.Schema({
-  date: {
-    type: Date,
-    default: Date.now,
-  },
-}); */
-
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -39,10 +32,6 @@ const userSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     ref: "user",
   },
-  /* favourites: {
-    type: Number,
-    default: 0,
-  }, */
   favourites: {
     type: [mongoose.Schema.Types.ObjectId],
     ref: "recipe",
