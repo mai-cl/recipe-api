@@ -253,6 +253,14 @@ router.post(
         });
       }
 
+      const freshUser = await User.findById(req.user.id);
+      if (freshUser.favourites.includes(recipe._id)) {
+        return res.status(400).json({
+          status: "fail",
+          message: "The recipe is already liked",
+        });
+      }
+
       recipe.$inc("likes", 1);
       await User.findByIdAndUpdate(req.user.id, {
         $addToSet: { favourites: req.body.targetRecipe },
@@ -273,5 +281,81 @@ router.post(
     }
   }
 );
+
+router.delete(
+  "/:id/likes/:targetRecipeId",
+  protect,
+  param(["targetRecipeId", "id"]).isMongoId(),
+  checkValidationResult,
+  async (req, res) => {
+    if (req.user.id !== req.params.id) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Bad request",
+      });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const recipe = await Recipe.findById(req.params.targetRecipeId);
+      if (!recipe) {
+        return res.status(400).json({
+          status: "fail",
+          message: "The recipe does not exists",
+        });
+      }
+
+      const freshUser = await User.findById(req.user.id);
+      if (!freshUser.favourites.includes(recipe._id)) {
+        return res.status(400).json({
+          status: "fail",
+          message: "The recipe is not liked",
+        });
+      }
+
+      recipe.$inc("likes", -1);
+      await User.findByIdAndUpdate(req.user.id, {
+        $pull: { favourites: req.params.targetRecipeId },
+      });
+      await recipe.save();
+
+      session.endSession();
+
+      return res.status(204).send();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+
+      return res.status(500).json({
+        status: "error",
+        error: error.message,
+      });
+    }
+  }
+);
+
+router.get("/:id/likes", protect, async (req, res) => {
+  if (req.user.id !== req.params.id) {
+    return res.status(400).json({
+      status: "fail",
+      message: "Bad request",
+    });
+  }
+
+  try {
+    const likes = await User.findById(req.user.id).select("-_id favourites");
+    return res.status(200).json({
+      status: "success",
+      data: likes,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+});
 
 module.exports = router;
