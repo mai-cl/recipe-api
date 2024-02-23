@@ -1,10 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const usersRouter = require("./routes/user");
-const followsRouter = require("./routes/follow");
 const categoriesRouter = require("./routes/category");
 const recipesRouter = require("./routes/recipe");
-const likesRouter = require("./routes/like");
 const authRouter = require("./routes/auth");
 
 const app = express();
