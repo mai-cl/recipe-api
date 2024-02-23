@@ -12,10 +12,8 @@ const port = process.env.PORT || 4000;
 
 app.use(express.json());
 app.use("/users", usersRouter);
-app.use("/follows", followsRouter);
 app.use("/categories", categoriesRouter);
 app.use("/recipes", recipesRouter);
-app.use("/likes", likesRouter);
 app.use("/auth", authRouter);
 
 app.listen(port, () => {
